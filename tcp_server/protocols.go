@@ -11,7 +11,6 @@ import (
 	"net"
 )
 
-
 func readPrimeNumber(conn *net.Conn) (*big.Int, error) {
 	// reads a prime number from the client
 	// for the purposes of Diffe - Hellman key exchange
@@ -21,7 +20,6 @@ func readPrimeNumber(conn *net.Conn) (*big.Int, error) {
 	// get the size of the prime
 	primeSizeBuf := make([]byte, 4)
 	n, err := (*conn).Read(primeSizeBuf)
-
 
 	if err != nil {
 		fmt.Printf("Error %v\n", err)
@@ -102,7 +100,7 @@ func readGenerator(conn *net.Conn) (*big.Int, error) {
 
 }
 
-func readPublicKey(conn *net.Conn) (*big.Int, error){
+func readPublicKey(conn *net.Conn) (*big.Int, error) {
 
 	clientKey := new(big.Int)
 	t := TunnelErr{err: ""}
@@ -137,7 +135,6 @@ func readPublicKey(conn *net.Conn) (*big.Int, error){
 
 	clientKey.SetBytes(clientKeyBuf)
 
-
 	return clientKey, nil
 
 }
@@ -171,7 +168,6 @@ func sendServerPublicKey(prime *big.Int, generator *big.Int, serverSecret *big.I
 
 	fmt.Printf("Sent this server key %v\n", result.Bytes())
 
-
 }
 
 func generateSessionKey(clientKey *big.Int, serverSecret *big.Int, prime *big.Int) *big.Int {
@@ -180,11 +176,10 @@ func generateSessionKey(clientKey *big.Int, serverSecret *big.Int, prime *big.In
 
 }
 
-
 func EncryptMessage(tunnel *EncryptedTunnel, message string) ([]byte, error) {
 
 	var encryptedBytes []byte
-	c, err := aes.NewCipher(tunnel.KeyBytes)
+	c, err := aes.NewCipher(tunnel.KeyBytes[:])
 	if err != nil {
 		printErr(err)
 		return encryptedBytes, err
@@ -206,7 +201,5 @@ func EncryptMessage(tunnel *EncryptedTunnel, message string) ([]byte, error) {
 	encryptedBytes = gcm.Seal(nonce, nonce, []byte(message), nil)
 
 	return encryptedBytes, nil
-
-
 
 }

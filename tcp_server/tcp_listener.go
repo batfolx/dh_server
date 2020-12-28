@@ -2,6 +2,7 @@ package tcp_server
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"fmt"
 	"net"
 	"os"
@@ -17,7 +18,7 @@ func SetupListener() {
 	for {
 		_listener, err := net.Listen("tcp", addr)
 		if err != nil {
-			fmt.Printf("Error in spinning up listener... trying again %v\n",err)
+			fmt.Printf("Error in spinning up listener... trying again %v\n", err)
 			time.Sleep(5 * time.Second)
 		} else {
 			listener = _listener
@@ -35,11 +36,9 @@ func SetupListener() {
 			go handleConnection(&conn)
 		}
 
-
 	}
 
 }
-
 
 func handleConnection(conn *net.Conn) {
 
@@ -59,7 +58,6 @@ func handleConnection(conn *net.Conn) {
 		}
 		encryptedBytes, err := EncryptMessage(tunnel, command)
 
-
 		if err != nil {
 			fmt.Printf("Failed to get encrypted bytes")
 
@@ -75,7 +73,7 @@ func handleConnection(conn *net.Conn) {
 }
 
 func ReadStream(conn *net.Conn) {
-	buffer := make ([]byte, 1024)
+	buffer := make([]byte, 1024)
 	for {
 		n, err := (*conn).Read(buffer)
 		if err != nil {
@@ -87,7 +85,7 @@ func ReadStream(conn *net.Conn) {
 	}
 }
 
-func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error){
+func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 	tunnel := NewEncryptedTunnel()
 
 	primeNumber, err := readPrimeNumber(conn)
@@ -130,7 +128,9 @@ func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error){
 	fmt.Printf("This is session key %v\n", sessionKey.Bytes())
 	tunnel.Conn = conn
 	tunnel.Key = sessionKey
-	tunnel.KeyBytes = sessionKey.Bytes()[0:32]
+
+	// hash the key to 32 bytes for AES 256
+	tunnel.KeyBytes = sha256.Sum256(sessionKey.Bytes())
 
 	return tunnel, err
 
