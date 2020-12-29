@@ -6,6 +6,8 @@ import (
 	"net"
 )
 
+const BUFFER_SIZE = 2048
+
 type EncryptedTunnel struct {
 	Conn     *net.Conn
 	Key      *big.Int

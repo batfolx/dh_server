@@ -1,20 +1,19 @@
 package tcp_server
 
 import (
-	"bufio"
 	"crypto/sha256"
 	"fmt"
 	"net"
-	"os"
 	"time"
 )
 
 func SetupListener() {
-
+	// sets up the TCP listener
 	addr := "127.0.0.1:9000"
 
 	var listener net.Listener = nil
 
+	// keep trying until we can get a listner
 	for {
 		_listener, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -27,8 +26,8 @@ func SetupListener() {
 
 	}
 
+	fmt.Printf("Server listening on %s\n", addr)
 	for {
-
 		conn, err := listener.Accept()
 		if err != nil {
 			continue
@@ -41,48 +40,38 @@ func SetupListener() {
 }
 
 func handleConnection(conn *net.Conn) {
-
+	// handles connection between a connection and a client
 	tunnel, err := setupEncryptedTunnel(conn)
 	if err != nil {
 		printErr(err)
 		return
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-	for {
+	ReadStream(tunnel)
 
-		command, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Printf("Error in getting command from reader")
-			return
-		}
-		encryptedBytes, err := EncryptMessage(tunnel, command)
-
-		if err != nil {
-			fmt.Printf("Failed to get encrypted bytes")
-
-		} else {
-			fmt.Printf("Encrypted message %v\n", encryptedBytes)
-			_, err := (*conn).Write(encryptedBytes)
-			if err != nil {
-				printErr(err)
-				return
-			}
-		}
-	}
 }
 
-func ReadStream(conn *net.Conn) {
-	buffer := make([]byte, 1024)
+func ReadStream(tunnel *EncryptedTunnel) {
+
+	buffer := make([]byte, BUFFER_SIZE)
+	conn := tunnel.Conn
 	for {
+
+		// read encrypted data
 		n, err := (*conn).Read(buffer)
 		if err != nil {
-			fmt.Printf("Error in reading from error %v\n", err)
+			printErr(err)
 			return
-		} else {
-			fmt.Printf("Received message %v from %s with %d bytes\n", buffer, (*conn).RemoteAddr(), n)
 		}
+		plaintext, err := DecryptData(buffer[0:n], tunnel)
+		if err != nil {
+			printErr(err)
+			return
+		}
+		fmt.Printf("Decrypted plaintext to %s\n", plaintext)
+
 	}
+
 }
 
 func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
