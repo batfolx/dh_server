@@ -203,3 +203,34 @@ func EncryptMessage(tunnel *EncryptedTunnel, message string) ([]byte, error) {
 	return encryptedBytes, nil
 
 }
+
+func DecryptData(ciphertext []byte, tunnel *EncryptedTunnel) (string, error) {
+
+	key := tunnel.KeyBytes
+	data := ""
+
+	c, err := aes.NewCipher(key[:])
+	if err != nil {
+		fmt.Println(err)
+		return data, err
+	}
+
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		fmt.Println(err)
+		return data, err
+
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		fmt.Println(err)
+		return data, err
+
+	}
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+
+	return string(plaintext), err
+
+}

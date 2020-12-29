@@ -88,6 +88,7 @@ func ReadStream(conn *net.Conn) {
 func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 	tunnel := NewEncryptedTunnel()
 
+	// get prime number from client
 	primeNumber, err := readPrimeNumber(conn)
 	if err != nil {
 		printErr(err)
@@ -96,6 +97,7 @@ func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 
 	fmt.Printf("This is prime number %v\n", primeNumber.Bytes())
 
+	// get generator from client
 	generator, err := readGenerator(conn)
 	if err != nil {
 		printErr(err)
@@ -104,6 +106,7 @@ func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 
 	fmt.Printf("This is generator %v\n", generator.Bytes())
 
+	// get key from client
 	clientKey, err := readPublicKey(conn)
 
 	if err != nil {
@@ -113,6 +116,7 @@ func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 
 	fmt.Printf("This is client key %v\n", clientKey.Bytes())
 
+	// generate server secret
 	serverSecret, err := generateServerSecret(primeNumber)
 	if err != nil {
 		printErr(err)
@@ -121,8 +125,10 @@ func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 
 	fmt.Printf("This is server secret %v\n", serverSecret.Bytes())
 
+	// send the server key to the client
 	sendServerPublicKey(primeNumber, generator, serverSecret, conn)
 
+	// generate session key
 	sessionKey := generateSessionKey(clientKey, serverSecret, primeNumber)
 
 	fmt.Printf("This is session key %v\n", sessionKey.Bytes())
@@ -132,6 +138,7 @@ func setupEncryptedTunnel(conn *net.Conn) (*EncryptedTunnel, error) {
 	// hash the key to 32 bytes for AES 256
 	tunnel.KeyBytes = sha256.Sum256(sessionKey.Bytes())
 
-	return tunnel, err
+	// return the tunnel and error
+	return tunnel, nil
 
 }
